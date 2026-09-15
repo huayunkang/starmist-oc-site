@@ -44,3 +44,7 @@ next-env.d.ts
 /.codex/
 /outputs/
 /work/
+/import-images/*
+!/import-images/.gitkeep
+/original-images/
+/tsconfig.tsbuildinfo
