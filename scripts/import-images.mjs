@@ -1,7 +1,8 @@
 import { createHash } from "node:crypto";
-import { copyFile, mkdir, readFile, readdir, rename, stat, writeFile } from "node:fs/promises";
+import { copyFile, mkdir, readFile, readdir, stat } from "node:fs/promises";
 import path from "node:path";
 import sharp from "sharp";
+import { updateGallery } from "./gallery-data.mjs";
 
 const root = process.cwd();
 const args = process.argv.slice(2);
@@ -37,13 +38,6 @@ function titleAndCategory(filename) {
   return { title, category };
 }
 
-async function writeJsonAtomically(file, records) {
-  await mkdir(path.dirname(file), { recursive: true });
-  const temporary = `${file}.${process.pid}.tmp`;
-  await writeFile(temporary, `${JSON.stringify(records, null, 2)}\n`, "utf8");
-  await rename(temporary, file);
-}
-
 async function main() {
   await mkdir(inputDir, { recursive: true });
   await mkdir(originalsDir, { recursive: true });
@@ -53,6 +47,7 @@ async function main() {
   if (!Array.isArray(records)) throw new Error("Gallery data must be an array.");
   const knownHashes = new Set(records.map(record => record.hash).filter(Boolean));
   const knownIds = new Set(records.map(record => record.id));
+  const pending = [];
   const files = await findImages(inputDir);
   let imported = 0, duplicates = 0, failed = 0;
   for (const file of files) {
@@ -77,7 +72,7 @@ async function main() {
       const { title, category } = titleAndCategory(path.basename(file));
       const mtime = (await stat(file)).mtime;
       const year = String(mtime.getFullYear());
-      records.push({
+      pending.push({
         id, title,
         image: `/images/starmist/full/${filename}.webp`,
         thumbnail: `/images/starmist/thumbs/${filename}.webp`,
@@ -88,15 +83,31 @@ async function main() {
         canon: category === "Canon", tags: [], description: "",
       });
       knownHashes.add(hash); knownIds.add(id); imported++;
-      console.log(`已导入 ${path.basename(file)} → ${id}`);
+      console.log(`已处理 ${path.basename(file)} → ${id}`);
     } catch (error) {
       failed++;
       console.error(`导入失败 ${file}: ${error.message}`);
     }
   }
-  if (imported) await writeJsonAtomically(dataFile, records);
+  if (pending.length) {
+    const merged = await updateGallery(dataFile, current => {
+      const hashes = new Set(current.map(record => record.hash).filter(Boolean));
+      const ids = new Set(current.map(record => record.id));
+      let added = 0, skipped = 0;
+      for (const record of pending) {
+        if (hashes.has(record.hash)) { skipped++; continue; }
+        if (ids.has(record.id)) throw new Error("ID collision; image not imported.");
+        current.push(record);
+        hashes.add(record.hash); ids.add(record.id); added++;
+      }
+      return { added, skipped };
+    });
+    imported = merged.added;
+    duplicates += merged.skipped;
+  }
   console.log(`完成：新增 ${imported} 张，跳过重复 ${duplicates} 张，失败 ${failed} 张。原图保留在 ${originalsDir}。`);
   if (failed) process.exitCode = 1;
 }
 
 main().catch(error => { console.error(error); process.exitCode = 1; });
+

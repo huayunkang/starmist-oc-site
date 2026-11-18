@@ -19,6 +19,8 @@
 
 原始文件仍留在 `import-images/`，另有一份原图备份放入 `original-images/`；这两个目录不会上传到 GitHub。网站用的压缩 WebP 放在 `public/images/starmist/full/`，图库用的小缩略图放在 `public/images/starmist/thumbs/`。作品信息集中保存在 `src/data/starmist-images.json`，可以直接修改，也可以使用 `/admin` 页面修改。
 
+导入器与本地管理接口使用同一数据文件锁，保存时会重新读取最新资料，避免导入覆盖管理页的修改。若进程意外退出后出现锁等待超时，请先停止所有导入器和本地管理接口，再删除错误信息指向的 `.lock` 空目录并重试；不要在写入进程仍运行时删除锁。
+
 `import-images/` 中的文件不会自动删除。导入完成后可以自行将那批文件移出，以保持待导入目录整洁；重复导入不会覆盖作品信息。
 
 ## 本地运行
@@ -43,3 +45,4 @@ npm run build
 ## 发布
 
 网站源代码保存在 GitHub 的 `starmist-oc-site` 仓库。公开图库和数据文件变更提交后，需要重新发布网站，线上访客才会看到新增图片。本地 `/admin` 保存不会直接改动线上版本。
+
