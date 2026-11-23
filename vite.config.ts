@@ -59,6 +59,7 @@ export default defineConfig(async () => {
       vinext(),
       sites({ mockAuth: !managedLinux }),
       cloudflare({
+        configPath: "./.openai/wrangler.local.jsonc",
         viteEnvironment: { name: "rsc", childEnvironments: ["ssr"] },
         inspectorPort: false,
         config: localBindingConfig,

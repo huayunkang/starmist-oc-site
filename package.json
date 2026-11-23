@@ -10,6 +10,8 @@
     "dev": "node scripts/dev-with-admin.mjs",
     "import-images": "node scripts/import-images.mjs",
     "build": "node scripts/run-framework.mjs build",
+    "build:cloudflare": "node scripts/build-cloudflare.mjs",
+    "deploy:cloudflare": "wrangler deploy --config wrangler.jsonc",
     "start": "node --import ./scripts/sites-env.mjs ./node_modules/wrangler/bin/wrangler.js dev --config dist/server/wrangler.json --local --persist-to .wrangler/state --ip 127.0.0.1 --inspector-port 0",
     "lint": "eslint . --ignore-pattern dist --ignore-pattern .next",
     "db:generate": "drizzle-kit generate"
