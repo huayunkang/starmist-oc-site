@@ -1,5 +1,5 @@
 "use client";
-
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, Check, ChevronLeft, ChevronRight, LoaderCircle, Plus, Save, X } from "lucide-react";
 import type { GalleryCategory, GalleryState, GalleryWork } from "../../src/data/starmist-images";
@@ -53,8 +53,24 @@ export default function AdminClient() {
   const allShownSelected = shown.length > 0 && shown.every(work => selectedIds.has(work.id));
 
   function choose(work: GalleryWork) { setDraft({ ...work, tags: [...work.tags] }); setTagInput(""); setMessage(""); }
-  function toggle(id: string) { setSelectedIds(previous => { const next = new Set(previous); next.has(id) ? next.delete(id) : next.add(id); return next; }); }
-  function togglePage() { setSelectedIds(previous => { const next = new Set(previous); for (const work of shown) allShownSelected ? next.delete(work.id) : next.add(work.id); return next; }); }
+  function toggle(id: string) {
+    setSelectedIds(previous => {
+      const next = new Set(previous);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+  function togglePage() {
+    setSelectedIds(previous => {
+      const next = new Set(previous);
+      for (const work of shown) {
+        if (allShownSelected) next.delete(work.id);
+        else next.add(work.id);
+      }
+      return next;
+    });
+  }
   function update<K extends keyof GalleryWork>(field: K, value: GalleryWork[K]) { if (draft) setDraft({ ...draft, [field]: value }); }
   function addTag() { if (!draft) return; update("tags", [...new Set([...draft.tags, ...parseTags(tagInput)])]); setTagInput(""); }
 
@@ -89,7 +105,7 @@ export default function AdminClient() {
   }
 
   return <main className="admin-root">
-    <header className="admin-header"><a href="/"><ArrowLeft size={17} /> 返回网站</a><span>STARMIST / LOCAL ARCHIVE MANAGER</span><span>仅本地开放</span></header>
+    <header className="admin-header"><Link href="/"><ArrowLeft size={17} /> 返回网站</Link><span>STARMIST / LOCAL ARCHIVE MANAGER</span><span>仅本地开放</span></header>
     <section className="admin-intro"><p>图片整理</p><h1>星雾档案管理</h1><span>共 {works.length} 张 · 待分类 {pendingCount} 张</span></section>
     {loading ? <p className="admin-status"><LoaderCircle className="spin" /> 正在读取档案…</p> : error && !works.length ? <p className="admin-error">{error}</p> : <>
       <div className="admin-toolbar">
